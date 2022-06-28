@@ -1,19 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:fancy_shimmer_image/fancy_shimmer_image.dart';
 import 'package:news_app_flutter_course/inner_screens/news_details_webview.dart';
+import 'package:news_app_flutter_course/models/bookmarks_model.dart';
+import 'package:news_app_flutter_course/models/news_model.dart';
 import 'package:news_app_flutter_course/services/utils.dart';
 import 'package:news_app_flutter_course/widgets/vertical_spacing.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:provider/provider.dart';
 
 import '../consts/styles.dart';
 import '../inner_screens/blog_details.dart';
 
 class ArticlesWidget extends StatelessWidget {
-  const ArticlesWidget({Key? key}) : super(key: key);
-
+  const ArticlesWidget({Key? key, this.isBookmark = false}) : super(key: key);
+  // final String imageUrl, title, url, dateToShow, readingTime;
+  final bool isBookmark;
   @override
   Widget build(BuildContext context) {
     Size size = Utils(context).getScreenSize;
+    dynamic newsModelProvider = isBookmark
+        ? Provider.of<BookmarksModel>(context)
+        : Provider.of<NewsModel>(context);
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Material(
@@ -21,7 +28,8 @@ class ArticlesWidget extends StatelessWidget {
         child: GestureDetector(
           onTap: () {
             // Navigate to the in app details screen
-            Navigator.pushNamed(context, NewsDetailsScreen.routeName);
+            Navigator.pushNamed(context, NewsDetailsScreen.routeName,
+                arguments: newsModelProvider.publishedAt);
           },
           child: Stack(
             children: [
@@ -47,14 +55,16 @@ class ArticlesWidget extends StatelessWidget {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(10),
-                      child: FancyShimmerImage(
-                        height: size.height * 0.12,
-                        width: size.height * 0.12,
-                        boxFit: BoxFit.fill,
-                        errorWidget:
-                            Image.asset('assets/images/empty_image.png'),
-                        imageUrl:
-                            "https://techcrunch.com/wp-content/uploads/2022/01/locket-app.jpg?w=1390&crop=1",
+                      child: Hero(
+                        tag: newsModelProvider.publishedAt,
+                        child: FancyShimmerImage(
+                          height: size.height * 0.12,
+                          width: size.height * 0.12,
+                          boxFit: BoxFit.fill,
+                          errorWidget:
+                              Image.asset('assets/images/empty_image.png'),
+                          imageUrl: newsModelProvider.urlToImage,
+                        ),
                       ),
                     ),
                     const SizedBox(
@@ -66,7 +76,7 @@ class ArticlesWidget extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           Text(
-                            'title ' * 100,
+                            newsModelProvider.title,
                             textAlign: TextAlign.justify,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -76,7 +86,7 @@ class ArticlesWidget extends StatelessWidget {
                           Align(
                             alignment: Alignment.topRight,
                             child: Text(
-                              '🕒 Reading time',
+                              '🕒 ${newsModelProvider.readingTimeText}',
                               style: smallTextStyle,
                             ),
                           ),
@@ -89,7 +99,8 @@ class ArticlesWidget extends StatelessWidget {
                                       context,
                                       PageTransition(
                                           type: PageTransitionType.rightToLeft,
-                                          child: const NewsDetailsWebView(),
+                                          child: NewsDetailsWebView(
+                                              url: newsModelProvider.url),
                                           inheritTheme: true,
                                           ctx: context),
                                     );
@@ -100,7 +111,7 @@ class ArticlesWidget extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  '20-2-2020 ' * 2,
+                                  newsModelProvider.dateToShow,
                                   maxLines: 1,
                                   style: smallTextStyle,
                                 ),
